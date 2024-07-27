@@ -83,12 +83,33 @@ puts "This is a text with bold and 8-bit color.".color(42).bold
 puts "This is a text with underline and 24-bit color.".color('#FF5733').underline
 ```
 
+### Validating Colors and Modes
+
+You can validate color codes and modes using the following methods:
+
+```ruby
+# Validate if a color code is correct (supports 4-bit, 8-bit, and 24-bit color codes)
+puts TerminalColor.valid?(:red)         # => true for 4-bit
+puts TerminalColor.valid?(42)           # => true for 8-bit
+puts TerminalColor.valid?('#FF5733')    # => true for 24-bit
+puts TerminalColor.valid?('invalid')    # => false
+
+# Validate if a mode is correct
+puts TerminalColor.valid_mode?(:bold)     # => true
+puts TerminalColor.valid_mode?(:invalid)  # => false
+```
+
 ### C Function
 
 For C language integration, you can use the following function:
 
 ```c
 mrb_value mrb_str_set_color(mrb_state *mrb, mrb_value str, mrb_value color, mrb_value bg_color, mrb_value mode);
+
+mrb_bool mrb_validate_color_code(mrb_state *mrb, mrb_value code);
+mrb_bool mrb_validate_color_code_cstr(mrb_state *mrb, const char *code);
+mrb_bool mrb_validate_mode_code(mrb_state *mrb, mrb_value code);
+mrb_bool mrb_validate_mode_code_cstr(mrb_state *mrb, const char* mode);
 ```
 
 ## License
