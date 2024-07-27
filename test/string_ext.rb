@@ -83,6 +83,11 @@ assert('String#color') do
 
   assert_equal "\e[1;41;31mhello\e[m", 'hello'.red.bg_red.bold, 'red, background red, bold method'
 
+  assert_equal "\e[31mhello\e[m\n\e[31mworld\e[m", "hello\nworld".red, 'multi-line'
+
+  assert_equal '', ''.color(:red), 'empty string'
+  assert_equal "\r\n", "\r\n".color(:red), 'newline characters'
+
   assert_raise(ArgumentError) { 'hello'.color(:unknown) }
   assert_raise(ArgumentError) { 'hello'.color(300) }
   assert_raise(ArgumentError) { 'hello'.color('#fff') }

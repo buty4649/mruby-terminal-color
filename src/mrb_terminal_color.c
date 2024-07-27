@@ -1,4 +1,5 @@
 #include <mruby.h>
+#include <mruby/array.h>
 #include <mruby/hash.h>
 #include <mruby/string.h>
 #include <mruby/value.h>
@@ -101,40 +102,28 @@ mrb_value mrb_value_to_mode_code(mrb_state *mrb, mrb_value mode)
     return mrb_hash_get(mrb, table, mode);
 }
 
-mrb_bool mrb_str_has_escape_code(mrb_value str)
+mrb_bool has_escape_code(const char *str, mrb_int len)
 {
-    const char *s = RSTRING_PTR(str);
-    size_t len = RSTRING_LEN(str);
     if (len < 2)
     {
         return FALSE;
     }
-    return s[0] == '\e' && s[1] == '[';
+    return str[0] == '\e' && str[1] == '[';
 }
 
-mrb_bool mrb_str_has_reset_code(mrb_value str)
+mrb_bool has_reset_code(const char *str, mrb_int len)
 {
-    const char *s = RSTRING_PTR(str);
-    size_t len = RSTRING_LEN(str);
     if (len < 3)
     {
         return FALSE;
     }
-    return s[len - 3] == '\e' && s[len - 2] == '[' && s[len - 1] == 'm';
+    return str[len - 3] == '\e' && str[len - 2] == '[' && str[len - 1] == 'm';
 }
 
-mrb_value mrb_str_set_color(mrb_state *mrb, mrb_value str, mrb_value color, mrb_value bg_color, mrb_value mode)
+mrb_value build_escape_sequence(mrb_state *mrb, mrb_value fg_code, mrb_value bg_code, mrb_value mode_code)
 {
-    mrb_value fg_code = mrb_value_to_color_code(mrb, color, FALSE);
-    mrb_value bg_code = mrb_value_to_color_code(mrb, bg_color, TRUE);
-    mrb_value mode_code = mrb_value_to_mode_code(mrb, mode);
-
-    if (mrb_nil_p(fg_code) && mrb_nil_p(bg_code) && mrb_nil_p(mode_code))
-    {
-        return str;
-    }
-
     mrb_value result = mrb_str_new_cstr(mrb, "\e[");
+
     if (!mrb_nil_p(fg_code))
     {
         mrb_str_concat(mrb, result, fg_code);
@@ -156,21 +145,98 @@ mrb_value mrb_str_set_color(mrb_state *mrb, mrb_value str, mrb_value color, mrb_
         mrb_str_concat(mrb, result, mode_code);
     }
 
-    if (mrb_str_has_escape_code(str))
+    return result;
+}
+
+mrb_int count_newline(mrb_state *mrb, mrb_value str)
+{
+    mrb_int count = 0;
+    const char *s = RSTRING_PTR(str);
+
+    for (mrb_int i = 0; i < RSTRING_LEN(str); i++)
     {
-        mrb_str_concat(mrb, result, mrb_str_new_cstr(mrb, ";"));
-        size_t len = RSTRING_LEN(str);
-        mrb_str_concat(mrb, result, mrb_str_substr(mrb, str, 2, len - 2));
-    }
-    else
-    {
-        mrb_str_concat(mrb, result, mrb_str_new_cstr(mrb, "m"));
-        mrb_str_concat(mrb, result, str);
+        if (s[i] == '\n' || s[i] == '\r')
+        {
+            count++;
+        }
     }
 
-    if (!mrb_str_has_reset_code(str))
+    return count;
+}
+
+mrb_int next_newline_pos(const char *s, size_t len)
+{
+    mrb_int result;
+
+    for (result = 0; result < len; result++)
     {
-        mrb_str_concat(mrb, result, mrb_str_new_cstr(mrb, "\e[m"));
+        if (s[result] == '\n' || s[result] == '\r')
+        {
+            break;
+        }
+    }
+
+    return result;
+}
+
+mrb_value mrb_str_set_color(mrb_state *mrb, mrb_value str, mrb_value color, mrb_value bg_color, mrb_value mode)
+{
+    if (RSTRING_LEN(str) == 0)
+    {
+        return str;
+    }
+
+    // only newline characters in the string
+    mrb_int newline_count = count_newline(mrb, str);
+    if (RSTRING_LEN(str) == newline_count)
+    {
+        return str;
+    }
+
+    mrb_value fg_code = mrb_value_to_color_code(mrb, color, FALSE);
+    mrb_value bg_code = mrb_value_to_color_code(mrb, bg_color, TRUE);
+    mrb_value mode_code = mrb_value_to_mode_code(mrb, mode);
+
+    if (mrb_nil_p(fg_code) && mrb_nil_p(bg_code) && mrb_nil_p(mode_code))
+    {
+        return str;
+    }
+
+    mrb_value escape_sequence = build_escape_sequence(mrb, fg_code, bg_code, mode_code);
+    const char* reset_code = "\e[m";
+    mrb_value result = mrb_str_new_capa(mrb, RSTRING_LEN(str) + (RSTRING_LEN(escape_sequence) + 3) * newline_count);
+
+    mrb_int len = RSTRING_LEN(str);
+    const char *s = RSTRING_PTR(str);
+    for (mrb_int i = 0; i < len; i++)
+    {
+        if (s[i] == '\n' || s[i] == '\r')
+        {
+            mrb_str_cat(mrb, result, &s[i], 1);
+            continue;
+        }
+
+        mrb_str_concat(mrb, result, escape_sequence);
+
+        mrb_int width = next_newline_pos(&s[i], len - i);
+        if (has_escape_code(&s[i], width))
+        {
+            mrb_str_cat(mrb, result, ";", 1);
+            mrb_str_cat(mrb, result, &s[i + 2], width - 2);
+        }
+        else
+        {
+            mrb_str_cat(mrb, result, "m", 1);
+            mrb_str_cat(mrb, result, &s[i], width);
+        }
+
+        if (!has_reset_code(&s[i], width))
+        {
+            mrb_str_cat(mrb, result, reset_code, 3);
+        }
+
+        // decrement by 1 because the loop will increment it
+        i += width - 1;
     }
 
     return result;
