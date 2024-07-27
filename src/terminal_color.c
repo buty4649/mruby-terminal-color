@@ -6,7 +6,7 @@
 #include <mruby/variable.h>
 #include <mruby/presym.h>
 
-#include "mrb_terminal_color.h"
+#include "terminal_color.h"
 
 #define mrb_termianl_color_const_get(sym) mrb_const_get(mrb, mrb_obj_value(mrb_module_get_id(mrb, MRB_SYM(TerminalColor))), sym)
 
