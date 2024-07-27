@@ -8,6 +8,8 @@
 
 #include "mrb_terminal_color.h"
 
+#define mrb_termianl_color_const_get(sym) mrb_const_get(mrb, mrb_obj_value(mrb_module_get_id(mrb, MRB_SYM(TerminalColor))), sym)
+
 mrb_value color_code_4bit(mrb_state *mrb, mrb_value color, mrb_bool bg_color)
 {
     if (mrb_nil_p(color) || !(mrb_symbol_p(color) || mrb_string_p(color)))
@@ -18,7 +20,7 @@ mrb_value color_code_4bit(mrb_state *mrb, mrb_value color, mrb_bool bg_color)
     mrb_value color_name = mrb_symbol_p(color) ? color : mrb_symbol_value(mrb_intern_str(mrb, color));
 
     mrb_sym table_name = bg_color ? MRB_SYM(ANSI_BG_COLOR_CODES) : MRB_SYM(ANSI_COLOR_CODES);
-    mrb_value table = mrb_const_get(mrb, mrb_obj_value(mrb->string_class), table_name);
+    mrb_value table = mrb_termianl_color_const_get(table_name);
     return mrb_hash_get(mrb, table, color_name);
 }
 
@@ -98,7 +100,7 @@ mrb_value mrb_value_to_color_code(mrb_state *mrb, mrb_value color, mrb_bool bg_c
 
 mrb_value mrb_value_to_mode_code(mrb_state *mrb, mrb_value mode)
 {
-    mrb_value table = mrb_const_get(mrb, mrb_obj_value(mrb->string_class), MRB_SYM(ANSI_MODE_CODES));
+    mrb_value table = mrb_termianl_color_const_get(MRB_SYM(ANSI_MODE_CODES));
     return mrb_hash_get(mrb, table, mode);
 }
 
