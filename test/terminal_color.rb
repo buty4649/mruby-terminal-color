@@ -24,8 +24,8 @@ end
 
 assert('TerminalColor.valid_mode?') do
   %i[reset bold underline blink reverse invisible].each do |code|
-     assert_true TerminalColor.valid_mode?(code), ":#{code}"
-     assert_true TerminalColor.valid_mode?(code.to_s), "\"#{code}\""
+    assert_true TerminalColor.valid_mode?(code), ":#{code}"
+    assert_true TerminalColor.valid_mode?(code.to_s), "\"#{code}\""
   end
   assert_false TerminalColor.valid_mode?(:invalid), ':invalid'
 
