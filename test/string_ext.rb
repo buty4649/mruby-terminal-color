@@ -36,7 +36,7 @@ assert('String#color') do
   assert_equal "\e[1mhello\e[m", 'hello'.color(nil, nil, :bold), 'bold'
   assert_equal "\e[4mhello\e[m", 'hello'.color(nil, nil, :underline), 'underline'
   assert_equal "\e[5mhello\e[m", 'hello'.color(nil, nil, :blink), 'blink'
-  assert_equal "\e[7mhello\e[m", 'hello'.color(nil, nil, :reverse), 'reverse'
+  assert_equal "\e[7mhello\e[m", 'hello'.color(nil, nil, :invert), 'invert'
   assert_equal "\e[8mhello\e[m", 'hello'.color(nil, nil, :invisible), 'invisible'
 
   assert_equal "\e[31;41;1mhello\e[m", 'hello'.color(:red, :red, :bold), 'red, background red, bold'
@@ -78,7 +78,7 @@ assert('String#color') do
   assert_equal "\e[1mhello\e[m", 'hello'.bold, 'bold method'
   assert_equal "\e[4mhello\e[m", 'hello'.underline, 'underline method'
   assert_equal "\e[5mhello\e[m", 'hello'.blink, 'blink method'
-  assert_equal "\e[7mhello\e[m", 'hello'.reverse, 'reverse method'
+  assert_equal "\e[7mhello\e[m", 'hello'.invert, 'invert method'
   assert_equal "\e[8mhello\e[m", 'hello'.invisible, 'invisible method'
 
   assert_equal "\e[1;41;31mhello\e[m", 'hello'.red.bg_red.bold, 'red, background red, bold method'

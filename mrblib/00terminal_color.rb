@@ -48,7 +48,7 @@ module TerminalColor
     bold: 1,
     underline: 4,
     blink: 5,
-    reverse: 7,
+    invert: 7,
     invisible: 8
   }.freeze
 end

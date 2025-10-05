@@ -53,7 +53,7 @@ puts "This is an underlined text.".underline
 - `bold`
 - `underline`
 - `blink`
-- `reverse`
+- `invert`
 - `invisible`
 - `reset`
 
